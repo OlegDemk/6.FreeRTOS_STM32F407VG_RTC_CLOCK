@@ -97,6 +97,7 @@ SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi2;
 DMA_HandleTypeDef hdma_spi2_tx;
 
+TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim10;
 
@@ -227,6 +228,7 @@ static void MX_DMA_Init(void);
 static void MX_RNG_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_ADC1_Init(void);
+static void MX_TIM1_Init(void);
 void StartDefaultTask(void *argument);
 void Start_Show_Resources(void *argument);
 void Start_UART_Task(void *argument);
@@ -280,6 +282,7 @@ int main(void)
   MX_RNG_Init();
   MX_I2C2_Init();
   MX_ADC1_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim3);		//  This TIM3 using for calculate how many time all tasks was running.
 
@@ -630,6 +633,56 @@ static void MX_SPI2_Init(void)
 }
 
 /**
+  * @brief TIM1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM1_Init(void)
+{
+
+  /* USER CODE BEGIN TIM1_Init 0 */
+
+  /* USER CODE END TIM1_Init 0 */
+
+  TIM_Encoder_InitTypeDef sConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM1_Init 1 */
+
+  /* USER CODE END TIM1_Init 1 */
+  htim1.Instance = TIM1;
+  htim1.Init.Prescaler = 0;
+  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim1.Init.Period = 65535;
+  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim1.Init.RepetitionCounter = 0;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI1;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC1Filter = 0;
+  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC2Filter = 0;
+  if (HAL_TIM_Encoder_Init(&htim1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM1_Init 2 */
+
+  /* USER CODE END TIM1_Init 2 */
+
+}
+
+/**
   * @brief TIM3 Initialization Function
   * @param None
   * @retval None
@@ -809,6 +862,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(BOOT1_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : encoder_button_Pin */
+  GPIO_InitStruct.Pin = encoder_button_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(encoder_button_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LD4_Pin LD3_Pin LD5_Pin LD6_Pin
                            Audio_RST_Pin */
@@ -1106,12 +1165,97 @@ void Start_RTC(void *argument)
 
 	ds3231_I2C_init();
 
+	  // Encoder /////////////////////////////////////////
+	  HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
+	  int32_t prevCounter = 0;
+	  ////////////////////////////////////////////////////
+
 	for(;;)
 	{
 		// 1. Set time
 		bool set_time = false;
-		if(set_time == true)
+
+		// read encoder button
+		//  Encoder test //////////////////////////////////////////////
+//			  int currCounter = __HAL_TIM_GET_COUNTER(&htim1);
+//			  currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
+//			  if(currCounter != prevCounter)
+//			  {
+////			          char buff[16];
+////			          snprintf(buff, sizeof(buff), "%06d", currCounter);
+////			          TFT9341_String_DMA(2,30, buff);
+////
+////			          // выводим куда-то currCounter
+////			          // ... пропущено ...
+//
+//			          prevCounter = currCounter;
+//			   }
+//			  if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)
+//			  {
+//				  int ggg = 99;
+//				  //TFT9341_String_DMA(2,30, "KEY pressed");
+//				  //ILI9341_Draw_Text( "KEY pressed", 10, 60, WHITE, 3, BLACK);
+//			  }
+//			  else
+//			  {
+//				  int g = 99;
+//				  //TFT9341_String_DMA(2,30, "               ");
+//				 // ILI9341_Draw_Text( "            ", 10, 60, WHITE, 3, BLACK);
+//			  }
+//			  ////////////////////////////////////////////////////////////////
+//			  osDelay(1);
+
+
+		//if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)
+
+		uint8_t clik = 0;
+		char klik_buf[3] = {0};
+		if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)	// If button pressed
 		{
+			do{
+				if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)
+				{
+					clik++;
+					// print numbers of kliks
+					sprintf(klik_buf, "%d", clik);
+					graphics_text(0, 0, 2, klik_buf);
+					oled_update();
+
+					// Читання енкодера можна зробити окремою функцією, і викликати її в свіч кейсах
+
+					/* Тут зробити свіч кейс з вибором, що саме записати
+					1 - Роки
+						Вивести рік з памяті на екран.
+						якщо крутити енкодером то міняти роки від 00 до 99.
+						якщо натиснути ще раз кнопку, то перейти на наступне налаштування (місяці)
+
+					2 - місяці (Аналогічно як з роком)
+					3 - дні
+					4 - години
+					5 - хвелини
+					6 - секунди
+					7 - Записати всі зміни і вийти з налаштувань годинника
+
+					*/
+
+					osDelay(300);
+				}
+				// Read encoder
+				int currCounter = __HAL_TIM_GET_COUNTER(&htim1);
+				currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
+				if(currCounter != prevCounter)
+				{
+					sprintf(klik_buf, "%d", prevCounter);
+					graphics_text(15, 0, 2, klik_buf);
+					oled_update();
+					memset(klik_buf, 0, sizeof(klik_buf));
+
+					prevCounter = currCounter;
+				}
+
+				//osDelay(100);
+			}while(clik < 10);
+
 
 		}
 		else		// Print current time
