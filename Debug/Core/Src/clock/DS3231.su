@@ -1,0 +1,16 @@
+DS3231.c:45:6:time_i2c_write_single	32	static
+DS3231.c:52:6:time_i2c_write_multi	32	static
+DS3231.c:58:6:time_i2c_read_single	32	static
+DS3231.c:65:6:time_i2c_read_multi	32	static
+DS3231.c:71:6:ds3231_I2C_init	4	static
+DS3231.c:81:6:ds3231_init	16	static
+DS3231.c:94:9:ds3231_run_command	16	static
+DS3231.c:114:9:ds3231_run_status	8	static
+DS3231.c:124:9:ds3231_init_status_report	8	static
+DS3231.c:134:6:ds3231_init_status_update	8	static
+DS3231.c:142:6:ds3231_reset	16	static
+DS3231.c:226:9:ds3231_read	16	static
+DS3231.c:287:9:ds3231_set	16	static
+DS3231.c:352:13:ds3231_data_clone	24	static
+DS3231.c:380:13:BCD_to_HEX	24	static
+DS3231.c:389:13:HEX_to_BCD	24	static
