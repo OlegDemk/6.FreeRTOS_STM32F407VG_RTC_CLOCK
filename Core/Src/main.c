@@ -512,7 +512,7 @@ static void MX_I2C3_Init(void)
 
   /* USER CODE END I2C3_Init 1 */
   hi2c3.Instance = I2C3;
-  hi2c3.Init.ClockSpeed = 400000;
+  hi2c3.Init.ClockSpeed = 100000;
   hi2c3.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c3.Init.OwnAddress1 = 0;
   hi2c3.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
@@ -1212,49 +1212,148 @@ void Start_RTC(void *argument)
 		char klik_buf[3] = {0};
 		if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)	// If button pressed
 		{
-			do{
-				if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)
-				{
-					clik++;
-					// print numbers of kliks
-					sprintf(klik_buf, "%d", clik);
-					graphics_text(0, 0, 2, klik_buf);
-					oled_update();
+			uint8_t seco = 0;					// Write test seconds
+			uint8_t status = 99;
 
-					// Читання енкодера можна зробити окремою функцією, і викликати її в свіч кейсах
+			//ds3231_set(DS3231_REGISTER_SECONDS_DEFAULT, &seco);													// Doesn't work
+			HAL_I2C_Mem_Write(&hi2c3, DS3231_I2C_ADDRESS<<1, DS3231_REGISTER_SECONDS_DEFAULT, 1, &seco, 1, 1000); 	//   work !!!!
+			HAL_I2C_Mem_Write(&hi2c3, DS3231_I2C_ADDRESS<<1, DS3231_REGISTER_MINUTES_DEFAULT, 1, &seco, 1, 1000); 	//   work !!!!
+			osDelay(100);
+			uint8_t seconds = 0;
+			uint8_t minutes = 0;
+			ds3231_read(DS3231_REGISTER_SECONDS_DEFAULT, &seconds);
+			ds3231_read(DS3231_REGISTER_MINUTES_DEFAULT, &minutes);
 
-					/* Тут зробити свіч кейс з вибором, що саме записати
-					1 - Роки
-						Вивести рік з памяті на екран.
-						якщо крутити енкодером то міняти роки від 00 до 99.
-						якщо натиснути ще раз кнопку, то перейти на наступне налаштування (місяці)
+//			status = ds3231_set(DS3231_REGISTER_SECONDS_DEFAULT, &seco);
+//			if(HAL_OK != status)
+//			{
+//				int ff = 0;
+//			}
+//			status = ds3231_set(DS3231_REGISTER_MINUTES_DEFAULT, &seco);
+//			if(HAL_OK != status)
+//			{
+//				int gg = 0;
+//			}
+//			status = ds3231_set(DS3231_REGISTER_HOURS_DEFAULT, &seco);
+//			if(HAL_OK != status)
+//			{
+//				int hh = 0;
+//			}
+			osDelay(500);
 
-					2 - місяці (Аналогічно як з роком)
-					3 - дні
-					4 - години
-					5 - хвелини
-					6 - секунди
-					7 - Записати всі зміни і вийти з налаштувань годинника
 
-					*/
-
-					osDelay(300);
-				}
-				// Read encoder
-				int currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-				currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
-				if(currCounter != prevCounter)
-				{
-					sprintf(klik_buf, "%d", prevCounter);
-					graphics_text(15, 0, 2, klik_buf);
-					oled_update();
-					memset(klik_buf, 0, sizeof(klik_buf));
-
-					prevCounter = currCounter;
-				}
-
-				//osDelay(100);
-			}while(clik < 10);
+//			do{
+//				if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)
+//				{
+//					clik++;
+//					// print numbers of kliks
+//					sprintf(klik_buf, "%d", clik);
+//					graphics_text(0, 0, 2, klik_buf);
+//					oled_update();
+//
+//					// Читання енкодера можна зробити окремою функцією, і викликати її в свіч кейсах
+//
+//					/* Тут зробити свіч кейс з вибором, що саме записати
+//					1 - Роки
+//						Вивести рік з памяті на екран.
+//						якщо крутити енкодером то міняти роки від 00 до 99.
+//						якщо натиснути ще раз кнопку, то перейти на наступне налаштування (місяці)
+//
+//					2 - місяці (Аналогічно як з роком)
+//					3 - дні
+//					4 - години
+//					5 - хвелини
+//					6 - секунди
+//					7 - Записати всі зміни і вийти з налаштувань годинника
+//					*/
+//					int currCounter = 0;
+//
+//					switch (clik)
+//					{
+//						case 1:
+//							// set the yers
+//							// Read encoder
+//							currCounter = 0;
+//
+//						break;
+//
+//						case 2:
+//							// set mounth
+//							currCounter = 0;
+//						break;
+//
+//						case 3:
+//							// set date
+//							currCounter = 0;
+//						break;
+//
+//						case 4:
+//							// set hours
+//							currCounter = 0;
+//						break;
+//
+//						case 5:
+//							// set minutes
+//							currCounter = 0;
+//						break;
+//
+//						case 6:
+//							// set seconds
+//							currCounter = 0;
+////							currCounter = __HAL_TIM_GET_COUNTER(&htim1);
+////							currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
+//							while(1)
+//							{
+//								currCounter = __HAL_TIM_GET_COUNTER(&htim1);
+//								currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
+//								if(currCounter != prevCounter)
+//								{
+//									sprintf(klik_buf, "%d", prevCounter);
+//									graphics_text(15, 0, 2, klik_buf);
+//									oled_update();
+//									memset(klik_buf, 0, sizeof(klik_buf));
+//
+//									prevCounter = currCounter;
+//									if(prevCounter < 0)
+//									{
+//										prevCounter = 0;
+//									}
+//									if(prevCounter > 59)
+//									{
+//										prevCounter = 0;
+//									}
+//
+//									if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)
+//									{
+//																	// write data
+//										ds3231_set(DS3231_REGISTER_SECONDS_DEFAULT, &prevCounter);
+//
+//										break;
+//									}
+//								}
+//							}
+//
+//						break;
+//
+//					}
+//
+//					osDelay(300);
+//				}
+////				// Read encoder
+////				int currCounter = __HAL_TIM_GET_COUNTER(&htim1);
+////				currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
+////				if(currCounter != prevCounter)
+////				{
+////					sprintf(klik_buf, "%d", prevCounter);
+////					graphics_text(15, 0, 2, klik_buf);
+////					oled_update();
+////					memset(klik_buf, 0, sizeof(klik_buf));
+////
+////					prevCounter = currCounter;
+////				}
+//
+//				//osDelay(100);
+//			}while(clik <= 7);
 
 
 		}
@@ -1274,7 +1373,13 @@ void Start_RTC(void *argument)
 			uint8_t mounth = 0;
 			uint8_t year = 0;
 
-			ds3231_read(DS3231_REGISTER_SECONDS_DEFAULT, &seconds);
+			uint8_t status = 99;
+
+			status = ds3231_read(DS3231_REGISTER_SECONDS_DEFAULT, &seconds);
+			if(HAL_OK != status)
+			{
+				int ff = 0;
+			}
 			ds3231_read(DS3231_REGISTER_MINUTES_DEFAULT, &minutes);
 			ds3231_read(DS3231_REGISTER_HOURS_DEFAULT, &hours);
 
