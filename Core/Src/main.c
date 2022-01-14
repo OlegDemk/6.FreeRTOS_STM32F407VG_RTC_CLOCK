@@ -1212,33 +1212,39 @@ void Start_RTC(void *argument)
 		char klik_buf[3] = {0};
 		if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)	// If button pressed
 		{
-			uint8_t seco = 0;					// Write test seconds
+			uint8_t test_seconds = 11;					// Write test seconds
 			uint8_t status = 99;
+			uint8_t day_of_week = 1;
 
+			// Write data on RTC
 			//ds3231_set(DS3231_REGISTER_SECONDS_DEFAULT, &seco);													// Doesn't work
-			HAL_I2C_Mem_Write(&hi2c3, DS3231_I2C_ADDRESS<<1, DS3231_REGISTER_SECONDS_DEFAULT, 1, &seco, 1, 1000); 	//   work !!!!
-			HAL_I2C_Mem_Write(&hi2c3, DS3231_I2C_ADDRESS<<1, DS3231_REGISTER_MINUTES_DEFAULT, 1, &seco, 1, 1000); 	//   work !!!!
-			osDelay(100);
-			uint8_t seconds = 0;
-			uint8_t minutes = 0;
-			ds3231_read(DS3231_REGISTER_SECONDS_DEFAULT, &seconds);
-			ds3231_read(DS3231_REGISTER_MINUTES_DEFAULT, &minutes);
+			//HAL_I2C_Mem_Write(&hi2c3, DS3231_I2C_ADDRESS<<1, DS3231_REGISTER_SECONDS_DEFAULT, 1, &test_seconds, 1, 1000); 	//   work !!!!
 
-//			status = ds3231_set(DS3231_REGISTER_SECONDS_DEFAULT, &seco);
-//			if(HAL_OK != status)
-//			{
-//				int ff = 0;
-//			}
-//			status = ds3231_set(DS3231_REGISTER_MINUTES_DEFAULT, &seco);
-//			if(HAL_OK != status)
-//			{
-//				int gg = 0;
-//			}
-//			status = ds3231_set(DS3231_REGISTER_HOURS_DEFAULT, &seco);
-//			if(HAL_OK != status)
-//			{
-//				int hh = 0;
-//			}
+			//time_i2c_write_single(DS3231_I2C_ADDRESS, DS3231_REGISTER_SECONDS_DEFAULT, &test_seconds);
+			ds3231_set(DS3231_REGISTER_SECONDS_DEFAULT, &test_seconds);
+			ds3231_set(DS3231_REGISTER_MINUTES_DEFAULT, &test_seconds);
+			ds3231_set(DS3231_REGISTER_HOURS_DEFAULT, &test_seconds);
+
+			ds3231_set(DS3231_REGISTER_DAY_OF_WEEK_DEFAULT, &day_of_week);
+			ds3231_set(DS3231_REGISTER_DATE_DEFAULT, &test_seconds);
+			ds3231_set(DS3231_REGISTER_MONTH_DEFAULT, &test_seconds);
+			ds3231_set(DS3231_REGISTER_YEAR_DEFAULT, &test_seconds);
+
+
+			// Read data from RTC
+			osDelay(100);
+			uint8_t seconds_t = 0;
+			uint8_t minutes_t = 0;
+			uint8_t hours_t = 0;
+
+			ds3231_read(DS3231_REGISTER_SECONDS_DEFAULT, &seconds_t);
+			ds3231_read(DS3231_REGISTER_MINUTES_DEFAULT, &minutes_t);
+			ds3231_read(DS3231_REGISTER_MINUTES_DEFAULT, &hours_t);
+
+			///////////////////////////////////////
+			int seco = 44;
+
+
 			osDelay(500);
 
 

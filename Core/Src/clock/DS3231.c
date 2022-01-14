@@ -41,17 +41,28 @@ static uint8_t register_default_value[] = {       /*used in reset function, cont
 //void time_i2c_read_single(uint8_t device_address, uint8_t register_address, uint8_t data_byte);
 //void time_i2c_read_multi(uint8_t device_address, uint8_t start_register_address, uint8_t *data_array, uint8_t data_length);
 
+
+// Test function for write
+void test_writr(void)
+{
+	uint8_t seco = 50;
+	HAL_I2C_Mem_Write(&hi2c3, DS3231_I2C_ADDRESS<<1, DS3231_REGISTER_SECONDS_DEFAULT, 1, &seco, 1, 1000);
+}
+
+
+
 /*function to transmit one byte of data to register_address on ds3231 (device_address: 0X68)*/
 void time_i2c_write_single(uint8_t device_address, uint8_t register_address, uint8_t *data_byte)
 {
-
-	HAL_I2C_Mem_Write(&hi2c3, device_address<<1, register_address, 1, &data_byte, 1, 1000);
+	//HAL_I2C_Mem_Write(&hi2c3, DS3231_I2C_ADDRESS<<1, DS3231_REGISTER_SECONDS_DEFAULT, 1, &seco, 1, 1000);
+	//HAL_I2C_Mem_Write(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint16_t MemAddress, uint16_t MemAddSize, uint8_t *pData, uint16_t Size, uint32_t Timeout)
+	HAL_I2C_Mem_Write(&hi2c3, (uint16_t)device_address<<1, register_address, 1, data_byte, 1, 1000);
 }
 
 /*function to transmit an array of data to device_address, starting from start_register_address*/
 void time_i2c_write_multi(uint8_t device_address, uint8_t start_register_address, uint8_t *data_array, uint8_t data_length)
 {
-	HAL_I2C_Mem_Write(&hi2c3, device_address<<1, start_register_address, 1, &data_array, data_length, 1000);
+	HAL_I2C_Mem_Write(&hi2c3, device_address<<1, start_register_address, 1, data_array, data_length, 1000);
 }
 
 /*function to read one byte of data from register_address on ds3231*/
