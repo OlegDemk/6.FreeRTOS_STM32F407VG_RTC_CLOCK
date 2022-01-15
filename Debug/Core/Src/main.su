@@ -18,5 +18,5 @@ main.c:1033:6:Start_UART_Task	1048	static
 main.c:1062:6:Start_LCD	16	static
 main.c:1095:6:Start_LCD_touchscreen	216	static
 main.c:1156:6:Start_RTC	144	static
-main.c:1554:6:HAL_TIM_PeriodElapsedCallback	16	static
-main.c:1581:6:Error_Handler	4	static,ignoring_inline_asm
+main.c:1705:6:HAL_TIM_PeriodElapsedCallback	16	static
+main.c:1732:6:Error_Handler	4	static,ignoring_inline_asm

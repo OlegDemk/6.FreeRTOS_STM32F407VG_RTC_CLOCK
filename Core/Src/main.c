@@ -1174,192 +1174,376 @@ void Start_RTC(void *argument)
 	{
 		// 1. Set time
 		bool set_time = false;
-
-		// read encoder button
-		//  Encoder test //////////////////////////////////////////////
-//			  int currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-//			  currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
-//			  if(currCounter != prevCounter)
-//			  {
-////			          char buff[16];
-////			          snprintf(buff, sizeof(buff), "%06d", currCounter);
-////			          TFT9341_String_DMA(2,30, buff);
-////
-////			          // выводим куда-то currCounter
-////			          // ... пропущено ...
-//
-//			          prevCounter = currCounter;
-//			   }
-//			  if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)
-//			  {
-//				  int ggg = 99;
-//				  //TFT9341_String_DMA(2,30, "KEY pressed");
-//				  //ILI9341_Draw_Text( "KEY pressed", 10, 60, WHITE, 3, BLACK);
-//			  }
-//			  else
-//			  {
-//				  int g = 99;
-//				  //TFT9341_String_DMA(2,30, "               ");
-//				 // ILI9341_Draw_Text( "            ", 10, 60, WHITE, 3, BLACK);
-//			  }
-//			  ////////////////////////////////////////////////////////////////
-//			  osDelay(1);
-
-
-		//if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)
+		bool exit_from_set_time = false;
 
 		uint8_t clik = 0;
 		char klik_buf[3] = {0};
 		if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)	// If button pressed
 		{
-			uint8_t test_seconds = 11;					// Write test seconds
-			uint8_t status = 99;
-			uint8_t day_of_week = 1;
+			clik = 1;
+				do{
+					int currCounter = 0;
 
-			// Write data on RTC
-			//ds3231_set(DS3231_REGISTER_SECONDS_DEFAULT, &seco);													// Doesn't work
-			//HAL_I2C_Mem_Write(&hi2c3, DS3231_I2C_ADDRESS<<1, DS3231_REGISTER_SECONDS_DEFAULT, 1, &test_seconds, 1, 1000); 	//   work !!!!
+					switch (clik)
+					{
+						case 1:
+							// set the yers
+							currCounter = 0;
+							prevCounter = 0;
 
-			//time_i2c_write_single(DS3231_I2C_ADDRESS, DS3231_REGISTER_SECONDS_DEFAULT, &test_seconds);
-			ds3231_set(DS3231_REGISTER_SECONDS_DEFAULT, &test_seconds);
-			ds3231_set(DS3231_REGISTER_MINUTES_DEFAULT, &test_seconds);
-			ds3231_set(DS3231_REGISTER_HOURS_DEFAULT, &test_seconds);
+							graphics_text(0, 0, 1, "   SET:");
+							graphics_text(0, 8, 1, "YEAR   ");
+							oled_update();
 
-			ds3231_set(DS3231_REGISTER_DAY_OF_WEEK_DEFAULT, &day_of_week);
-			ds3231_set(DS3231_REGISTER_DATE_DEFAULT, &test_seconds);
-			ds3231_set(DS3231_REGISTER_MONTH_DEFAULT, &test_seconds);
-			ds3231_set(DS3231_REGISTER_YEAR_DEFAULT, &test_seconds);
+							osDelay(500);
+
+							__HAL_TIM_SET_COUNTER(&htim1, 10);
+
+							while(1)
+							{
+								currCounter = __HAL_TIM_GET_COUNTER(&htim1);
+								currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
+								if(currCounter != prevCounter)
+								{
+									prevCounter = currCounter;
+									if(prevCounter < 10)
+									{
+										prevCounter = 10;
+										//_HAL_TIM_SET_COUNTER(&htim1, 10);
+									}
+									if(prevCounter > 99)
+									{
+										prevCounter = 99;
+										//__HAL_TIM_SET_COUNTER(&htim1, 99);
+									}
+
+									graphics_text(0, 16, 1, "         ");
+ 									oled_update();
+
+									sprintf(klik_buf, "%d", prevCounter);
+									graphics_text(0, 16, 1, klik_buf);
+									oled_update();
+									memset(klik_buf, 0, sizeof(klik_buf));
+								}
+								if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)
+								{
+																		// write data
+									ds3231_set(DS3231_REGISTER_YEAR_DEFAULT, &prevCounter);
+									clik = 2;
+									break;
+								}
+							}
+
+						break;
+
+						case 2:
+							// set mounth
+							currCounter = 0;
+							prevCounter = 0;
+
+							graphics_text(0, 0, 1, "   SET:");
+							graphics_text(0, 8, 1, "MONTH ");
+							oled_update();
+
+							__HAL_TIM_SET_COUNTER(&htim1, 1);
+
+							osDelay(500);
+							while(1)
+							{
+								currCounter = __HAL_TIM_GET_COUNTER(&htim1);
+								currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
+								if(currCounter != prevCounter)
+								{
+									prevCounter = currCounter;
+									if(prevCounter <= 0)
+									{
+										prevCounter = 1;
+									}
+									if(prevCounter > 12)
+									{
+										prevCounter = 12;
+									}
+
+									graphics_text(0, 16, 1, "         ");
+ 									oled_update();
+
+									sprintf(klik_buf, "%d", prevCounter);
+									graphics_text(0, 16, 1, klik_buf);
+									oled_update();
+									memset(klik_buf, 0, sizeof(klik_buf));
+								}
+								if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)
+								{
+									// write data
+									ds3231_set(DS3231_REGISTER_MONTH_DEFAULT, &prevCounter);
+									clik = 3;
+									break;
+								}
+							}
+						break;
+
+						case 3:
+							// set date
+							currCounter = 0;
+							prevCounter = 0;
+
+							graphics_text(0, 0, 1, "   SET:");
+							graphics_text(0, 8, 1, "DATE    ");
+							oled_update();
+
+							__HAL_TIM_SET_COUNTER(&htim1, 1);
+
+							osDelay(500);
+							while(1)
+							{
+								currCounter = __HAL_TIM_GET_COUNTER(&htim1);
+								currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
+								if(currCounter != prevCounter)
+								{
+									prevCounter = currCounter;
+									if(prevCounter <= 0)
+									{
+										prevCounter = 1;
+									}
+									if(prevCounter > 31)
+									{
+										prevCounter = 1;
+									}
+
+									graphics_text(0, 16, 1, "         ");
+ 									oled_update();
+
+									sprintf(klik_buf, "%d", prevCounter);
+									graphics_text(0, 16, 1, klik_buf);
+									oled_update();
+									memset(klik_buf, 0, sizeof(klik_buf));
+								}
+								if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)
+								{
+									// write data
+									ds3231_set(DS3231_REGISTER_DATE_DEFAULT, &prevCounter);
+									clik = 4;
+									break;
+								}
+							}
+						break;
+
+						case 4:
+							// set day of week
+							currCounter = 0;
+							prevCounter = 0;
+
+							graphics_text(0, 0, 1, "   SET:");
+							graphics_text(0, 8, 1, "DAY      ");
+							oled_update();
+
+							__HAL_TIM_SET_COUNTER(&htim1, 1);
+
+							osDelay(500);
+							while(1)
+							{
+								currCounter = __HAL_TIM_GET_COUNTER(&htim1);
+								currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
+								if(currCounter != prevCounter)
+								{
+									prevCounter = currCounter;
+									if(prevCounter <= 0)
+									{
+										prevCounter = 1;
+									}
+									if(prevCounter > 7)
+									{
+										prevCounter = 1;
+									}
+
+									graphics_text(0, 16, 1, "         ");
+ 									oled_update();
+
+									sprintf(klik_buf, "%d", prevCounter);
+									graphics_text(0, 16, 1, klik_buf);
+									oled_update();
+									memset(klik_buf, 0, sizeof(klik_buf));
+								}
+								if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)
+								{
+																// write data
+									ds3231_set(DS3231_REGISTER_DAY_OF_WEEK_DEFAULT, &prevCounter);
+									clik = 5;
+									break;
+								}
+							}
+
+						break;
+
+						case 5:
+							// set hours
+							// set date
+							currCounter = 0;
+							prevCounter = 0;
+
+							graphics_text(0, 0, 1, "   SET:");
+							graphics_text(0, 8, 1, "HOUR    ");
+							oled_update();
+
+							__HAL_TIM_SET_COUNTER(&htim1, 0);
+
+							osDelay(500);
+							while(1)
+							{
+								currCounter = __HAL_TIM_GET_COUNTER(&htim1);
+								currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
+								if(currCounter != prevCounter)
+								{
+									prevCounter = currCounter;
+									if(prevCounter < 0)
+									{
+										prevCounter = 0;
+									}
+									if(prevCounter > 24)
+									{
+										prevCounter = 0;
+									}
+
+									graphics_text(0, 16, 1, "         ");
+ 									oled_update();
+
+									sprintf(klik_buf, "%d", prevCounter);
+									graphics_text(0, 16, 1, klik_buf);
+									oled_update();
+									memset(klik_buf, 0, sizeof(klik_buf));
+								}
+								if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)
+								{
+									// write data
+									ds3231_set(DS3231_REGISTER_HOURS_DEFAULT, &prevCounter);
+									clik = 6;
+									break;
+								}
+							}
+						break;
+
+						case 6:
+							// set minutes
+							// set hours
+							// set date
+							currCounter = 0;
+							prevCounter = 0;
+
+							graphics_text(0, 0, 1, "   SET:");
+							graphics_text(0, 8, 1, "MINUTE ");
+							oled_update();
+
+							__HAL_TIM_SET_COUNTER(&htim1, 0);
+
+							osDelay(500);
+							while(1)
+							{
+								currCounter = __HAL_TIM_GET_COUNTER(&htim1);
+								currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
+								if(currCounter != prevCounter)
+								{
+									prevCounter = currCounter;
+									if(prevCounter < 0)
+									{
+										prevCounter = 0;
+									}
+									if(prevCounter > 59)
+									{
+										prevCounter = 0;
+									}
+
+									graphics_text(0, 16, 1, "         ");
+ 									oled_update();
+
+									sprintf(klik_buf, "%d", prevCounter);
+									graphics_text(0, 16, 1, klik_buf);
+									oled_update();
+									memset(klik_buf, 0, sizeof(klik_buf));
+								}
+								if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)
+								{
+									// write data
+									ds3231_set(DS3231_REGISTER_MINUTES_DEFAULT, &prevCounter);
+									clik = 7;
+									break;
+								}
+							}
+
+						break;
+
+						case 7:
+							// set seconds
+							currCounter = 0;
+							prevCounter = 0;
+
+							graphics_text(0, 0, 1, "   SET:");
+							graphics_text(0, 8, 1, "SECOND   ");
+							oled_update();
+
+							__HAL_TIM_SET_COUNTER(&htim1, 1);
+
+							osDelay(500);
+							while(1)
+							{
+								currCounter = __HAL_TIM_GET_COUNTER(&htim1);
+								currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
+								if(currCounter != prevCounter)
+								{
+									prevCounter = currCounter;
+									if(prevCounter < 0)
+									{
+										prevCounter = 0;
+									}
+									if(prevCounter > 59)
+									{
+										prevCounter = 0;
+									}
+
+									graphics_text(0, 16, 1, "         ");
+ 									oled_update();
+
+									sprintf(klik_buf, "%d", prevCounter);
+									graphics_text(0, 16, 1, klik_buf);
+									oled_update();
+									memset(klik_buf, 0, sizeof(klik_buf));
+
+								}
+								if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)
+								{
+									// write data
+									ds3231_set(DS3231_REGISTER_SECONDS_DEFAULT, &prevCounter);
+									clik = 8;
 
 
-			// Read data from RTC
-			osDelay(100);
-			uint8_t seconds_t = 0;
-			uint8_t minutes_t = 0;
-			uint8_t hours_t = 0;
+									osDelay(500);
+									graphics_text(0, 0, 1, "                  ");
+									graphics_text(0, 8, 1, "               ");
+									graphics_text(0, 16, 1, "               ");
+									oled_update();
 
-			ds3231_read(DS3231_REGISTER_SECONDS_DEFAULT, &seconds_t);
-			ds3231_read(DS3231_REGISTER_MINUTES_DEFAULT, &minutes_t);
-			ds3231_read(DS3231_REGISTER_MINUTES_DEFAULT, &hours_t);
+									for(uint8_t k =0; k< 5; k++)
+									{
+										graphics_text(0, 0, 1, " END");
+										oled_update();
+										osDelay(300);
+										graphics_text(0, 0, 1, "         ");
+										oled_update();
+										osDelay(100);
+									}
 
-			///////////////////////////////////////
-			int seco = 44;
 
 
-			osDelay(500);
+									break;
+								}
+							}
 
+							break;
 
-//			do{
-//				if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)
-//				{
-//					clik++;
-//					// print numbers of kliks
-//					sprintf(klik_buf, "%d", clik);
-//					graphics_text(0, 0, 2, klik_buf);
-//					oled_update();
-//
-//					// Читання енкодера можна зробити окремою функцією, і викликати її в свіч кейсах
-//
-//					/* Тут зробити свіч кейс з вибором, що саме записати
-//					1 - Роки
-//						Вивести рік з памяті на екран.
-//						якщо крутити енкодером то міняти роки від 00 до 99.
-//						якщо натиснути ще раз кнопку, то перейти на наступне налаштування (місяці)
-//
-//					2 - місяці (Аналогічно як з роком)
-//					3 - дні
-//					4 - години
-//					5 - хвелини
-//					6 - секунди
-//					7 - Записати всі зміни і вийти з налаштувань годинника
-//					*/
-//					int currCounter = 0;
-//
-//					switch (clik)
-//					{
-//						case 1:
-//							// set the yers
-//							// Read encoder
-//							currCounter = 0;
-//
-//						break;
-//
-//						case 2:
-//							// set mounth
-//							currCounter = 0;
-//						break;
-//
-//						case 3:
-//							// set date
-//							currCounter = 0;
-//						break;
-//
-//						case 4:
-//							// set hours
-//							currCounter = 0;
-//						break;
-//
-//						case 5:
-//							// set minutes
-//							currCounter = 0;
-//						break;
-//
-//						case 6:
-//							// set seconds
-//							currCounter = 0;
-////							currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-////							currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
-//							while(1)
-//							{
-//								currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-//								currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
-//								if(currCounter != prevCounter)
-//								{
-//									sprintf(klik_buf, "%d", prevCounter);
-//									graphics_text(15, 0, 2, klik_buf);
-//									oled_update();
-//									memset(klik_buf, 0, sizeof(klik_buf));
-//
-//									prevCounter = currCounter;
-//									if(prevCounter < 0)
-//									{
-//										prevCounter = 0;
-//									}
-//									if(prevCounter > 59)
-//									{
-//										prevCounter = 0;
-//									}
-//
-//									if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)
-//									{
-//																	// write data
-//										ds3231_set(DS3231_REGISTER_SECONDS_DEFAULT, &prevCounter);
-//
-//										break;
-//									}
-//								}
-//							}
-//
-//						break;
-//
-//					}
-//
-//					osDelay(300);
-//				}
-////				// Read encoder
-////				int currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-////				currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
-////				if(currCounter != prevCounter)
-////				{
-////					sprintf(klik_buf, "%d", prevCounter);
-////					graphics_text(15, 0, 2, klik_buf);
-////					oled_update();
-////					memset(klik_buf, 0, sizeof(klik_buf));
-////
-////					prevCounter = currCounter;
-////				}
-//
-//				//osDelay(100);
-//			}while(clik <= 7);
+					}
+
+					osDelay(300);
+
+			}while(clik <= 7);
 
 
 		}
@@ -1436,11 +1620,6 @@ void Start_RTC(void *argument)
 				memset(time_buf, 0, sizeof(time_buf));
 			}
 
-//			sprintf(time_buf, "%d", minutes);
-//			strcat(time, time_buf);
-//			strcat(time, ":");
-//			memset(time_buf, 0, sizeof(time_buf));
-
 			// Print seconds on OLED
 			if(seconds == 0)
 			{
@@ -1466,12 +1645,12 @@ void Start_RTC(void *argument)
 			// Print date
 			sprintf(time_buf, "%d", date_day);
 			strcat(date, time_buf);
-			strcat(date, ":");
+			strcat(date, " ");
 			memset(time_buf, 0, sizeof(time_buf));
 
 			sprintf(time_buf, "%d", mounth);
 			strcat(date, time_buf);
-			strcat(date, ":");
+			strcat(date, " ");
 			memset(time_buf, 0, sizeof(time_buf));
 
 			sprintf(time_buf, "%d", year);
@@ -1483,30 +1662,30 @@ void Start_RTC(void *argument)
 			switch (day)
 			{
 				case 1:
-					strcat(date, " Monday");
+					strcat(date, "  Monday");
 					break;
 				case 2:
-					strcat(date, " Tuesday");
+					strcat(date, "  Tuesday");
 					break;
 				case 3:
-					strcat(date, " Wednesday");
+					strcat(date, "  Wednesday");
 					break;
 				case 4:
-					strcat(date, " Thursday");
+					strcat(date, "  Thursday");
 					break;
 				case 5:
-					strcat(date, " Friday");
+					strcat(date, "  Friday");
 					break;
 				case 6:
-					strcat(date, " Saturday");
+					strcat(date, "  Saturday");
 					break;
 				case 7:
-					strcat(date, " Sunday");
+					strcat(date, "  Sunday");
 					break;
 			}
 
 			graphics_text(40, 0, 3, time);
-			graphics_text(0, 22, 2, date);
+			graphics_text(5, 24, 2, date);
 			oled_update();
 		}
 
