@@ -687,7 +687,7 @@ static void MX_I2C3_Init(void)
 
   /* USER CODE END I2C3_Init 1 */
   hi2c3.Instance = I2C3;
-  hi2c3.Init.ClockSpeed = 100000;
+  hi2c3.Init.ClockSpeed = 400000;
   hi2c3.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c3.Init.OwnAddress1 = 0;
   hi2c3.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
@@ -1374,588 +1374,415 @@ void Start_RTC(void *argument)
 {
   /* USER CODE BEGIN Start_RTC */
   /* Infinite loop */
+
 	osDelay(1000);
+
+	// For resd time
+	char time[20] = {0};
+	char date[40] = {0};
+	char time_buf[10] = {0};
+	char time_buf_2[10] = {0};
+
+	uint8_t seconds = 0;
+	uint8_t minutes = 0;
+	uint8_t hours = 0;
+	uint8_t day = 0;
+	uint8_t date_day = 0;
+	uint8_t mounth = 0;
+	uint8_t year = 0;
+	uint8_t status = 9;
+	//
+
 	oled_init();
 	oled_update();
-
-	#define DEVICE_FOUND 0
-
 	ds3231_I2C_init();
 
-	  // Encoder /////////////////////////////////////////
-	  HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
-	  int32_t prevCounter = 0;
-	  ////////////////////////////////////////////////////
+	// Encoder
+	HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
+	int32_t prevCounter = 0;
+	//
 
 	for(;;)
 	{
-		 switch (klick)
-			  {
+		switch (klick)
+		{
 			case 0:
 
-				for(int i = 0; i < 5; i++)
+//				for(int i = 0; i < 5; i++)
+//				{
+//					HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);
+//					osDelay(100);
+//					HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_RESET);
+//					osDelay(100);
+//				}
+
+
+				while(klick == 0)
 				{
-					HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);
-					osDelay(100);
-					HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_RESET);
-					osDelay(100);
+					memset(time, 0, sizeof(time));
+					memset(date, 0, sizeof(date));
+					memset(time_buf, 0, sizeof(time_buf));
+					memset(time_buf_2, 0, sizeof(time_buf_2));
+
+					// 1. Read time from RTS
+					// Red status (Detect DS3231)
+					uint8_t buff= 0;
+					status = HAL_I2C_Mem_Read(&hi2c3, (uint16_t)DS3231_I2C_ADDRESS<<1,(uint16_t)0, (uint16_t) 1, &buff, (uint16_t) 1,(uint32_t) 1000);
+					if(status != HAL_OK )				// If DS3231 doesen'e detect
+					{
+						clear();
+						while(status != HAL_OK)
+						{
+							strcat(time_buf, "RTC ERROR");
+							graphics_text(8, 5, 3, time_buf);
+							oled_update();
+							memset(time_buf, 0, sizeof(time_buf));
+							osDelay(300);
+
+							invert_rectangle(0, 0, 128, 32);
+							oled_update();
+							osDelay(300);
+
+							clear();
+							oled_update();
+
+							status = HAL_I2C_Mem_Read(&hi2c3, (uint16_t)DS3231_I2C_ADDRESS<<1,(uint16_t)0, (uint16_t) 1, &buff, (uint16_t) 1,(uint32_t) 1000);
+						}
+						clear();
+					}
+
+					else	// If all DS3231 detected, read time and date
+					{
+						ds3231_read(DS3231_REGISTER_SECONDS_DEFAULT, &seconds);
+						ds3231_read(DS3231_REGISTER_MINUTES_DEFAULT, &minutes);
+						ds3231_read(DS3231_REGISTER_HOURS_DEFAULT, &hours);
+
+						ds3231_read(DS3231_REGISTER_DAY_OF_WEEK_DEFAULT, &day);
+						ds3231_read(DS3231_REGISTER_DATE_DEFAULT, &date_day);
+						ds3231_read(DS3231_REGISTER_MONTH_DEFAULT, &mounth);
+						ds3231_read(DS3231_REGISTER_YEAR_DEFAULT, &year);
+
+						// Convert in string
+						// Print minutes on OLED
+						if(hours < 10)
+						{
+							memset(time_buf, 0, sizeof(time_buf));
+							sprintf(time_buf, "%c", '0');
+							sprintf(time_buf_2, "%d", hours);
+							strcat(time_buf, time_buf_2);
+							strcat(time, time_buf);
+							strcat(time, ":");
+						}
+						else
+						{
+							sprintf(time_buf, "%d", hours);
+							strcat(time, time_buf);
+							strcat(time, ":");
+							memset(time_buf, 0, sizeof(time_buf));
+						}
+
+						// Print minutes on OLED
+						if(minutes < 10)
+						{
+							memset(time_buf, 0, sizeof(time_buf));
+							sprintf(time_buf, "%c", '0');
+							sprintf(time_buf_2, "%d", minutes);
+							strcat(time_buf, time_buf_2);
+							strcat(time, time_buf);
+							strcat(time, ":");
+						}
+						else
+						{
+							sprintf(time_buf, "%d", minutes);
+							strcat(time, time_buf);
+							strcat(time, ":");
+							memset(time_buf, 0, sizeof(time_buf));
+						}
+
+						// Print seconds on OLED
+						if(seconds == 0)
+						{
+							clear();
+							oled_update();
+						}
+						if(seconds < 10)
+						{
+							memset(time_buf, 0, sizeof(time_buf));
+							sprintf(time_buf, "%c", '0');
+							sprintf(time_buf_2, "%d", seconds);
+							strcat(time_buf, time_buf_2);
+							strcat(time, time_buf);
+						}
+						else
+						{
+							sprintf(time_buf, "%d", seconds);
+							strcat(time, time_buf);
+							memset(time_buf, 0, sizeof(time_buf));
+						}
+
+						// Print date
+						sprintf(time_buf, "%d", date_day);
+						strcat(date, time_buf);
+						strcat(date, ".");
+						memset(time_buf, 0, sizeof(time_buf));
+
+						sprintf(time_buf, "%d", mounth);
+						strcat(date, time_buf);
+						strcat(date, ".");
+						memset(time_buf, 0, sizeof(time_buf));
+
+						sprintf(time_buf, "%d", year);
+						strcat(date, "20");
+						strcat(date, time_buf);
+						memset(time_buf, 0, sizeof(time_buf));
+
+						// day
+						switch (day)
+						{
+							case 1:
+								strcat(date, "  Monday");
+								break;
+							case 2:
+								strcat(date, "  Tuesday");
+								break;
+							case 3:
+								strcat(date, "  Wednesday");
+								break;
+							case 4:
+								strcat(date, "  Thursday");
+								break;
+							case 5:
+								strcat(date, "  Friday");
+								break;
+							case 6:
+								strcat(date, "  Saturday");
+								break;
+							case 7:
+								strcat(date, "  Sunday");
+								break;
+						}
+
+						graphics_text(40, 0, 3, time);
+						graphics_text(5, 24, 2, date);
+						oled_update();
+
+						osDelay(1000);
+					}
+
+				}
+		  		break;
+
+
+			case 1:
+				// Set yer
+				HAL_GPIO_WritePin(GPIOD, LD6_Pin, GPIO_PIN_SET);
+				HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_RESET);
+
+				graphics_text(0, 0, 1, "   SET:");
+				graphics_text(0, 8, 1, "YEAR   ");
+				oled_update();
+
+				__HAL_TIM_SET_COUNTER(&htim1, 0);								// Start count encoder from 0
+
+				while(klick == 1)
+				{
+					currCounter = __HAL_TIM_GET_COUNTER(&htim1);
+					currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
+
+					if(currCounter != prevCounter)
+					{
+						prevCounter = currCounter;
+						if(currCounter > 100)									// Encoder count from 0 to 100
+						{
+							__HAL_TIM_SET_COUNTER(&htim1, 0);
+						}
+						if(currCounter < 0)
+						{
+							__HAL_TIM_SET_COUNTER(&htim1, 0);
+						}
+//						prevCounter = currCounter;
+
+						graphics_text(0, 16, 1, "           ");
+						oled_update();
+
+						sprintf(time_buf, "%d", currCounter);
+						graphics_text(0, 16, 1, time_buf);
+						oled_update();
+						memset(time_buf, 0, sizeof(time_buf));
+						osDelay(10);
+					}
+				}
+				while(klick == 2)
+				{
+					// write data
+					ds3231_set(DS3231_REGISTER_YEAR_DEFAULT, &prevCounter);
+					//klick = 3;
+					//break;
 				}
 
+				break;
+
+			case 2:
+				// set mounth
+				HAL_GPIO_WritePin(GPIOD, LD5_Pin, GPIO_PIN_SET);
+				HAL_GPIO_WritePin(GPIOD, LD6_Pin, GPIO_PIN_RESET);
+
+				__HAL_TIM_SET_COUNTER(&htim1, 1);								// Start count encoder from 0
+
+				while(klick == 2)
+				{
+					currCounter = __HAL_TIM_GET_COUNTER(&htim1);
+					currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
+
+					if(currCounter != prevCounter)
+					{
+						if(currCounter > 12)
+						{
+							__HAL_TIM_SET_COUNTER(&htim1, 1);					// Encoder count from 0 to 10
+						}
+
+						prevCounter = currCounter;
+
+					}
+				}
+
+				break;
+
+			case 3:
+				// Set date
+				HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_SET);
+				HAL_GPIO_WritePin(GPIOD, LD5_Pin, GPIO_PIN_RESET);
+
+				__HAL_TIM_SET_COUNTER(&htim1, 1);								// Start count encoder from 1
+
+				while(klick == 3)
+				{
+					currCounter = __HAL_TIM_GET_COUNTER(&htim1);
+					currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
+
+					if(currCounter != prevCounter)
+					{
+						if(currCounter > 31)
+						{
+							__HAL_TIM_SET_COUNTER(&htim1, 0);					// Encoder count from 1 to 32
+						}
+
+						prevCounter = currCounter;
+
+					}
+				}
+				break;
+
+			case 4:
+				// Set day of week
+				HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);
+				HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_RESET);
 
-									  		__HAL_TIM_SET_COUNTER(&htim1, 0);
-
-									  		while(klick == 0)
-									  		{
-
-									  		// 1. Read time from RTS
-									  					char time[20] = {0};
-									  					char date[40] = {0};
-									  					char time_buf[10] = {0};
-									  					char time_buf_2[10] = {0};
-
-									  					uint8_t seconds = 0;
-									  					uint8_t minutes = 0;
-									  					uint8_t hours = 0;
-									  					uint8_t day = 0;
-									  					uint8_t date_day = 0;
-									  					uint8_t mounth = 0;
-									  					uint8_t year = 0;
-
-									  					uint8_t status = 99;
-
-									  					status = ds3231_read(DS3231_REGISTER_SECONDS_DEFAULT, &seconds);
-									  					if(HAL_OK != status)
-									  					{
-									  						int ff = 0;
-									  					}
-									  					ds3231_read(DS3231_REGISTER_MINUTES_DEFAULT, &minutes);
-									  					ds3231_read(DS3231_REGISTER_HOURS_DEFAULT, &hours);
-
-									  					ds3231_read(DS3231_REGISTER_DAY_OF_WEEK_DEFAULT, &day);
-									  					ds3231_read(DS3231_REGISTER_DATE_DEFAULT, &date_day);
-									  					ds3231_read(DS3231_REGISTER_MONTH_DEFAULT, &mounth);
-									  					ds3231_read(DS3231_REGISTER_YEAR_DEFAULT, &year);
-
-									  					// Convert in string
-									  					// Print minutes on OLED
-									  					if(hours < 10)
-									  					{
-									  						memset(time_buf, 0, sizeof(time_buf));
-									  						sprintf(time_buf, "%c", '0');
-									  						sprintf(time_buf_2, "%d", hours);
-									  						strcat(time_buf, time_buf_2);
-									  						strcat(time, time_buf);
-									  						strcat(time, ":");
-									  					}
-									  					else
-									  					{
-									  						sprintf(time_buf, "%d", hours);
-									  						strcat(time, time_buf);
-									  						strcat(time, ":");
-									  						memset(time_buf, 0, sizeof(time_buf));
-									  					}
-
-									  		//			sprintf(time_buf, "%d", hours);
-									  		//			strcat(time, time_buf);
-									  		//			strcat(time, ":");
-									  		//			memset(time_buf, 0, sizeof(time_buf));
-
-									  					// Print minutes on OLED
-									  					if(minutes < 10)
-									  					{
-									  						memset(time_buf, 0, sizeof(time_buf));
-									  						sprintf(time_buf, "%c", '0');
-									  						sprintf(time_buf_2, "%d", minutes);
-									  						strcat(time_buf, time_buf_2);
-									  						strcat(time, time_buf);
-									  						strcat(time, ":");
-									  					}
-									  					else
-									  					{
-									  						sprintf(time_buf, "%d", minutes);
-									  						strcat(time, time_buf);
-									  						strcat(time, ":");
-									  						memset(time_buf, 0, sizeof(time_buf));
-									  					}
-
-									  					// Print seconds on OLED
-									  					if(seconds == 0)
-									  					{
-									  						clear();
-									  						oled_update();
-									  					}
-									  					if(seconds < 10)
-									  					{
-									  						memset(time_buf, 0, sizeof(time_buf));
-									  						sprintf(time_buf, "%c", '0');
-									  						sprintf(time_buf_2, "%d", seconds);
-									  						strcat(time_buf, time_buf_2);
-									  						strcat(time, time_buf);
-									  					}
-									  					else
-									  					{
-									  						sprintf(time_buf, "%d", seconds);
-									  						strcat(time, time_buf);
-									  						memset(time_buf, 0, sizeof(time_buf));
-									  					}
-
-
-									  					// Print date
-									  					sprintf(time_buf, "%d", date_day);
-									  					strcat(date, time_buf);
-									  					strcat(date, ".");
-									  					memset(time_buf, 0, sizeof(time_buf));
-
-									  					sprintf(time_buf, "%d", mounth);
-									  					strcat(date, time_buf);
-									  					strcat(date, ".");
-									  					memset(time_buf, 0, sizeof(time_buf));
-
-									  					sprintf(time_buf, "%d", year);
-									  					strcat(date, "20");
-									  					strcat(date, time_buf);
-									  					memset(time_buf, 0, sizeof(time_buf));
-
-									  					// day
-									  					switch (day)
-									  					{
-									  						case 1:
-									  							strcat(date, "  Monday");
-									  							break;
-									  						case 2:
-									  							strcat(date, "  Tuesday");
-									  							break;
-									  						case 3:
-									  							strcat(date, "  Wednesday");
-									  							break;
-									  						case 4:
-									  							strcat(date, "  Thursday");
-									  							break;
-									  						case 5:
-									  							strcat(date, "  Friday");
-									  							break;
-									  						case 6:
-									  							strcat(date, "  Saturday");
-									  							break;
-									  						case 7:
-									  							strcat(date, "  Sunday");
-									  							break;
-									  					}
-
-									  					graphics_text(40, 0, 3, time);
-									  					graphics_text(5, 24, 2, date);
-									  					oled_update();
-
-
-									  				osDelay(1000);
-									  			}
-
-
-					  		break;
-
-
-			  	  case 1:
-			  		  // Set yer
-			  		  HAL_GPIO_WritePin(GPIOD, LD6_Pin, GPIO_PIN_SET);
-			  		  HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_RESET);
-
-			  		graphics_text(0, 0, 1, "   SET:");
-			  		graphics_text(0, 8, 1, "YEAR   ");
-			  		oled_update();
-
-			  		  __HAL_TIM_SET_COUNTER(&htim1, 10);								// Start count encoder from 0
-
-			  		  while(klick == 1)
-			  		  {
-			  			  currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-			  			  currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
-
-			  			  if(currCounter != prevCounter)
-			  			  {
-			  				  if(currCounter > 100)									// Encoder count from 0 to 100
-			  				  {
-			  					  __HAL_TIM_SET_COUNTER(&htim1, 0);
-			  				  }
-			  				  prevCounter = currCounter;
-			  			  }
-			  		  }
-
-			  		  break;
-
-			  	  case 2:
-			  		  // set mounth
-			  		  HAL_GPIO_WritePin(GPIOD, LD5_Pin, GPIO_PIN_SET);
-			  		  HAL_GPIO_WritePin(GPIOD, LD6_Pin, GPIO_PIN_RESET);
-
-			  		  __HAL_TIM_SET_COUNTER(&htim1, 1);								// Start count encoder from 0
-
-			  		 while(klick == 2)
-			  		 {
-			  			 currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-			  			 currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
-
-			  			 if(currCounter != prevCounter)
-			  			 {
-			  				 if(currCounter > 12)
-			  				 {
-			  					 __HAL_TIM_SET_COUNTER(&htim1, 1);					// Encoder count from 0 to 10
-			  				 }
-
-			  				 prevCounter = currCounter;
-
-			  			 }
-			  		 }
-
-			  		  break;
-
-			  	  case 3:
-			  		  // Set date
-			  		 HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_SET);
-			  		 HAL_GPIO_WritePin(GPIOD, LD5_Pin, GPIO_PIN_RESET);
-
-			  		 __HAL_TIM_SET_COUNTER(&htim1, 1);								// Start count encoder from 1
-
-			  		 while(klick == 3)
-			  		 {
-			  			 currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-			  			 currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
-
-			  			 if(currCounter != prevCounter)
-			  			 {
-			  				 if(currCounter > 31)
-			  				 {
-			  					 __HAL_TIM_SET_COUNTER(&htim1, 0);					// Encoder count from 1 to 32
-			  				 }
-
-			  				 prevCounter = currCounter;
-
-			  			 }
-			  		 }
-			  		 break;
-
-			  	  case 4:
-			  		  // Set day of week
-			  		  HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);
-			  		  HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_RESET);
-
-			  		  __HAL_TIM_SET_COUNTER(&htim1, 1);
-
-			  		  while(klick == 4)
-			  		  {
-			  			  currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-			  			  currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
+				__HAL_TIM_SET_COUNTER(&htim1, 1);
 
-			  			  if(currCounter != prevCounter)
-			  			  {
-			  				  if(currCounter > 7)
-			  				  {
-			  					  __HAL_TIM_SET_COUNTER(&htim1, 1);
-			  				  }
+				while(klick == 4)
+				{
+					currCounter = __HAL_TIM_GET_COUNTER(&htim1);
+					currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
 
-			  				  prevCounter = currCounter;
+					if(currCounter != prevCounter)
+					{
+						if(currCounter > 7)
+						{
+							__HAL_TIM_SET_COUNTER(&htim1, 1);
+						}
 
-			  			  }
-			  		  }
-			  		  break;
+						prevCounter = currCounter;
 
-			  	  case 5:
-			  		  // Set hour
-			  		  HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);
-			  		  HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_RESET);
+					}
+				}
+				break;
 
-			  		  __HAL_TIM_SET_COUNTER(&htim1, 0);
+			case 5:
+				// Set hour
+				HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);
+				HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_RESET);
 
-			  		  while(klick == 5)
-			  		  {
-			  			  currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-			  			  currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
+				__HAL_TIM_SET_COUNTER(&htim1, 0);
 
-			  			  if(currCounter != prevCounter)
-			  			  {
-			  				  if(currCounter > 23)
-			  				  {
-			  					  __HAL_TIM_SET_COUNTER(&htim1, 0);
-			  				  }
+				while(klick == 5)
+				{
+					currCounter = __HAL_TIM_GET_COUNTER(&htim1);
+					currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
 
-			  				  prevCounter = currCounter;
-			  			  }
-			  		  }
-			  		  break;
+					if(currCounter != prevCounter)
+					{
+						if(currCounter > 23)
+						{
+							__HAL_TIM_SET_COUNTER(&htim1, 0);
+						}
 
-			  	  case 6:
-			  		  // Set minutes
-			  		  HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);
-			  		  HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_RESET);
-
-			  		  __HAL_TIM_SET_COUNTER(&htim1, 0);
-
-			  		  while(klick == 6)
-			  		  {
-			  			  currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-			  			  currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
-
-			  			  if(currCounter != prevCounter)
-			  			  {
-			  				  if(currCounter > 59)
-			  				  {
-			  					  __HAL_TIM_SET_COUNTER(&htim1, 0);
-			  				  }
-
-			  				  prevCounter = currCounter;
-			  			  }
-			  		  }
-			  		  break;
-
-			  	  case 7:
-			  		  // Set minutes
-			  		  HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);
-			  		  HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_RESET);
-
-			  		  __HAL_TIM_SET_COUNTER(&htim1, 0);
-
-			  		  while(klick == 7)
-			  		  {
-			  			  currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-			  			  currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
-
-			  			  if(currCounter != prevCounter)
-			  			  {
-			  				  if(currCounter > 59)
-			  				  {
-			  					  __HAL_TIM_SET_COUNTER(&htim1, 0);
-			  				  }
-
-			  				  prevCounter = currCounter;
-			  			  }
-			  		  }
-
-
-
-
-
-			  		  break;
-
-
-			  }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		/////////////////////////////////////////////////////
-//		 switch (klick)
-//			  {
-//			  	  case 0:
-//			  		  // set the yers
-//			  		  HAL_GPIO_WritePin(GPIOD, LD6_Pin, GPIO_PIN_SET);
-//			  		  HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_RESET);
-//
-//			  		  __HAL_TIM_SET_COUNTER(&htim1, 1);								// Start count encoder from 0
-//
-//			  		  while(klick == 0)
-//			  		  {
-//			  			  currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-//			  			  currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
-//
-//			  			  if(currCounter != prevCounter)
-//			  			  {
-//			  				  if(currCounter > 99)									// Encoder count from 0 to 100
-//			  				  {
-//			  					  __HAL_TIM_SET_COUNTER(&htim1, 10);
-//			  				  }
-//			  				  prevCounter = currCounter;
-//			  			  }
-//			  		  }
-//
-//			  		  break;
-//
-//			  	  case 1:
-//			  		  // set mounth
-//			  		  HAL_GPIO_WritePin(GPIOD, LD5_Pin, GPIO_PIN_SET);
-//			  		  HAL_GPIO_WritePin(GPIOD, LD6_Pin, GPIO_PIN_RESET);
-//
-//			  		  __HAL_TIM_SET_COUNTER(&htim1, 1);								// Start count encoder from 0
-//
-//			  		 while(klick == 1)
-//			  		 {
-//			  			 currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-//			  			 currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
-//
-//			  			 if(currCounter != prevCounter)
-//			  			 {
-//			  				 if(currCounter > 12)
-//			  				 {
-//			  					 __HAL_TIM_SET_COUNTER(&htim1, 1);					// Encoder count from 0 to 10
-//			  				 }
-//
-//			  				 prevCounter = currCounter;
-//
-//			  			 }
-//			  		 }
-//
-//			  		  break;
-//
-//			  	  case 2:
-//			  		 HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_SET);
-//			  		 HAL_GPIO_WritePin(GPIOD, LD5_Pin, GPIO_PIN_RESET);
-//
-//			  		 __HAL_TIM_SET_COUNTER(&htim1, 1);								// Start count encoder from 1
-//
-//			  		 while(klick == 2)
-//			  		 {
-//			  			 currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-//			  			 currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
-//
-//			  			 if(currCounter != prevCounter)
-//			  			 {
-//			  				 if(currCounter > 31)
-//			  				 {
-//			  					 __HAL_TIM_SET_COUNTER(&htim1, 1);					// Encoder count from 1 to 32
-//			  				 }
-//
-//			  				 prevCounter = currCounter;
-//
-//			  			 }
-//			  		 }
-//			  		 break;
-//
-//			  	  case 3:
-//			  		  // set date
-//			  		  HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);
-//			  		  HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_RESET);
-//
-//			  		  __HAL_TIM_SET_COUNTER(&htim1, 1);
-//
-//			  		  while(klick == 3)
-//			  		  {
-//			  			  currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-//			  			  currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
-//
-//			  			  if(currCounter != prevCounter)
-//			  			  {
-//			  				  if(currCounter > 31)
-//			  				  {
-//			  					  __HAL_TIM_SET_COUNTER(&htim1, 1);
-//			  				  }
-//
-//			  				  prevCounter = currCounter;
-//
-//			  			  }
-//			  		  }
-//			  		  break;
-//
-//				  case 4:
-//					  // set day of week
-//					  HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);
-//					  HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_RESET);
-//
-//					  __HAL_TIM_SET_COUNTER(&htim1, 1);
-//
-//					  while(klick == 4)
-//					  {
-//						  currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-//						  currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
-//
-//						  if(currCounter != prevCounter)
-//						  {
-//							  if(currCounter > 7)
-//							  {
-//								  __HAL_TIM_SET_COUNTER(&htim1, 1);
-//							  }
-//
-//							  prevCounter = currCounter;
-//
-//						  }
-//					  }
-//					  break;
-//
-//				  case 5:
-//				  	  // set hour
-//				  	  HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);
-//				  	  HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_RESET);
-//
-//				  	  __HAL_TIM_SET_COUNTER(&htim1, 0);
-//
-//				  	  while(klick == 5)
-//				  	  {
-//				  		  currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-//				  		  currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
-//
-//				  		  if(currCounter != prevCounter)
-//				  		  {
-//				  			  if(currCounter > 23)
-//				  			  {
-//				  				  __HAL_TIM_SET_COUNTER(&htim1, 0);
-//				  			  }
-//
-//				  			  prevCounter = currCounter;
-//
-//				  		  }
-//				  	  }
-//				  	  break;
-//
-//				  case 6:
-//					  // set minutes
-//					  HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);
-//					  HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_RESET);
-//
-//					  __HAL_TIM_SET_COUNTER(&htim1, 0);
-//
-//					  while(klick == 6)
-//					  {
-//						  currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-//						  currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
-//
-//						  if(currCounter != prevCounter)
-//						  {
-//							  if(currCounter > 59)
-//							  {
-//								  __HAL_TIM_SET_COUNTER(&htim1, 0);
-//							  }
-//
-//							  prevCounter = currCounter;
-//
-//						  }
-//					  }
-//				  break;
-//
-//				  case 7:
-//					  // set minutes
-//					  HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);
-//					  HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_RESET);
-//
-//					  __HAL_TIM_SET_COUNTER(&htim1, 0);
-//
-//					  while(klick == 7)
-//					  {
-//						  currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-//						  currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
-//
-//						  if(currCounter != prevCounter)
-//						  {
-//							  if(currCounter > 59)
-//							  {
-//								  __HAL_TIM_SET_COUNTER(&htim1, 0);
-//							  }
-//
-//							  prevCounter = currCounter;
-//
-//						  }
-//					  }
-//				  break;
-//			  }
-
-////////////////////////////////////////////////////////////////////////////////////////////
+						prevCounter = currCounter;
+					}
+				}
+				break;
+
+			case 6:
+				// Set minutes
+				HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);
+				HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_RESET);
+
+				__HAL_TIM_SET_COUNTER(&htim1, 0);
+
+				while(klick == 6)
+				{
+					currCounter = __HAL_TIM_GET_COUNTER(&htim1);
+					currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
+
+					if(currCounter != prevCounter)
+					{
+						if(currCounter > 59)
+						{
+							__HAL_TIM_SET_COUNTER(&htim1, 0);
+						}
+
+						prevCounter = currCounter;
+					}
+				}
+				break;
+
+			case 7:
+				// Set minutes
+				HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);
+				HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_RESET);
+
+				__HAL_TIM_SET_COUNTER(&htim1, 0);
+
+				while(klick == 7)
+				{
+					currCounter = __HAL_TIM_GET_COUNTER(&htim1);
+					currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
+
+					if(currCounter != prevCounter)
+					{
+						if(currCounter > 59)
+						{
+							__HAL_TIM_SET_COUNTER(&htim1, 0);
+						}
+
+						prevCounter = currCounter;
+					}
+				}
+				break;
+		}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 //		/////////////////////////////////////////////////////////////////////
