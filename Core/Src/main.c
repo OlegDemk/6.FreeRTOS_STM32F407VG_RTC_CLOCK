@@ -1397,29 +1397,23 @@ void Start_RTC(void *argument)
 			  		  }
 			  		  break;
 
-//			  	case 7:   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< END
-//			  		// Set minutes
-//			  		HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);
-//			  		HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_RESET);
-//
-//			  		__HAL_TIM_SET_COUNTER(&htim1, 0);
-//
-//			  		while(klick == 6)
-//			  		{
-//			  			currCounter = __HAL_TIM_GET_COUNTER(&htim1);
-//			  				  			  currCounter = 32767 - ((currCounter-1) & 0xFFFF) / 2;
-//
-//			  				  			  if(currCounter != prevCounter)
-//			  				  			  {
-//			  				  				  if(currCounter > 59)
-//			  				  				  {
-//			  				  					  __HAL_TIM_SET_COUNTER(&htim1, 0);
-//			  				  				  }
-//
-//			  				  				  prevCounter = currCounter;
-//			  				  			  }
-//			  				  		  }
-//			  				  		  break;
+			  	case 7:
+			  		// END OF SETTINGS
+			  		HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);
+			  		HAL_GPIO_WritePin(GPIOD, LD3_Pin, GPIO_PIN_RESET);
+
+			  		__HAL_TIM_SET_COUNTER(&htim1, 0);
+
+
+			  		for(int i = 0; i <= 6; i++)
+			  		{
+			  			HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);
+			  			osDelay(100);
+			  			HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_RESET);
+			  			osDelay(100);
+			  		}
+
+			  		break;
 			  }
 
 
