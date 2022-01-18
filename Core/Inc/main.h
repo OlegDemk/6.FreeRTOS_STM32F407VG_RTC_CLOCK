@@ -98,6 +98,7 @@ void Error_Handler(void);
 #define BOOT1_GPIO_Port GPIOB
 #define encoder_button_Pin GPIO_PIN_15
 #define encoder_button_GPIO_Port GPIOE
+#define encoder_button_EXTI_IRQn EXTI15_10_IRQn
 #define LD4_Pin GPIO_PIN_12
 #define LD4_GPIO_Port GPIOD
 #define LD3_Pin GPIO_PIN_13
