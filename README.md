@@ -12,5 +12,8 @@ Components:
 4. Encoder (With key button)
 
 All iteracrion with clock is in Start_RTC task. 
+![alt text](https://github.com/OlegDemk/6.FreeRTOS_STM32F407VG_RTC_CLOCK/blob/main/project_schem.png)
+
+![alt text](https://github.com/OlegDemk/6.FreeRTOS_STM32F407VG_RTC_CLOCK/blob/main/photo.png)
 
 
