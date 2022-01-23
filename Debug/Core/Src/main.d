@@ -56,10 +56,8 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_core.h \
  ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ioreq.h \
  ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ctlreq.h \
- ../Core/Inc/LCD/spi_ili9341.h ../Core/Inc/LCD/fonts.h \
- ../Core/Inc/LCD/ILI9341_Touchscreen.h ../Core/Inc/oled/oled.h \
- ../Core/Inc/oled/gfx.h ../Core/Inc/clock/i2c_scanner.h \
- ../Core/Inc/clock/DS3231.h
+ ../Core/Inc/oled/oled.h ../Core/Inc/oled/gfx.h \
+ ../Core/Inc/clock/i2c_scanner.h ../Core/Inc/clock/DS3231.h
 
 ../Core/Inc/main.h:
 
@@ -178,12 +176,6 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ioreq.h:
 
 ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ctlreq.h:
-
-../Core/Inc/LCD/spi_ili9341.h:
-
-../Core/Inc/LCD/fonts.h:
-
-../Core/Inc/LCD/ILI9341_Touchscreen.h:
 
 ../Core/Inc/oled/oled.h:
 

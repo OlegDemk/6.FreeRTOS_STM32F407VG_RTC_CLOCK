@@ -21,7 +21,6 @@ RM := rm -rf
 -include Core/Startup/subdir.mk
 -include Core/Src/oled/subdir.mk
 -include Core/Src/clock/subdir.mk
--include Core/Src/LCD/subdir.mk
 -include Core/Src/subdir.mk
 -include objects.mk
 

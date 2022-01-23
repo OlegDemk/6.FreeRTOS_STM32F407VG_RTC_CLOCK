@@ -31,10 +31,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-// SD
-#include "LCD/spi_ili9341.h"
-#include "LCD/ILI9341_Touchscreen.h"
-
 // Oled
 #include "oled/oled.h"
 #include "oled/gfx.h"
@@ -146,30 +142,6 @@ const osThreadAttr_t UART_Task_attributes = {
   .stack_size = sizeof(UART_TaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
-/* Definitions for LCD */
-osThreadId_t LCDHandle;
-uint32_t LCDBuffer[ 1500 ];
-osStaticThreadDef_t LCDControlBlock;
-const osThreadAttr_t LCD_attributes = {
-  .name = "LCD",
-  .cb_mem = &LCDControlBlock,
-  .cb_size = sizeof(LCDControlBlock),
-  .stack_mem = &LCDBuffer[0],
-  .stack_size = sizeof(LCDBuffer),
-  .priority = (osPriority_t) osPriorityLow,
-};
-/* Definitions for LCD_touchscreen */
-osThreadId_t LCD_touchscreenHandle;
-uint32_t LCD_touchscreenBuffer[ 128 ];
-osStaticThreadDef_t LCD_touchscreenControlBlock;
-const osThreadAttr_t LCD_touchscreen_attributes = {
-  .name = "LCD_touchscreen",
-  .cb_mem = &LCD_touchscreenControlBlock,
-  .cb_size = sizeof(LCD_touchscreenControlBlock),
-  .stack_mem = &LCD_touchscreenBuffer[0],
-  .stack_size = sizeof(LCD_touchscreenBuffer),
-  .priority = (osPriority_t) osPriorityLow,
-};
 /* Definitions for RTC */
 osThreadId_t RTCHandle;
 uint32_t RTCBuffer[ 256 ];
@@ -224,168 +196,6 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 }
 // ---------------------------------------------------------------------------------
 
-void print_time(void)
-{
-	for(int i = 0; i < 5; i++)
-	{
-		HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_SET);
-		osDelay(100);
-		HAL_GPIO_WritePin(GPIOD, LD4_Pin, GPIO_PIN_RESET);
-		osDelay(100);
-	}
-
-
-						  		__HAL_TIM_SET_COUNTER(&htim1, 0);
-
-//						  		if(klick == 0)
-//						  		{
-
-						  		// 1. Read time from RTS
-						  					char time[20] = {0};
-						  					char date[40] = {0};
-						  					char time_buf[10] = {0};
-						  					char time_buf_2[10] = {0};
-
-						  					uint8_t seconds = 0;
-						  					uint8_t minutes = 0;
-						  					uint8_t hours = 0;
-						  					uint8_t day = 0;
-						  					uint8_t date_day = 0;
-						  					uint8_t mounth = 0;
-						  					uint8_t year = 0;
-
-						  					uint8_t status = 99;
-
-						  					status = ds3231_read(DS3231_REGISTER_SECONDS_DEFAULT, &seconds);
-						  					if(HAL_OK != status)
-						  					{
-						  						int ff = 0;
-						  					}
-						  					ds3231_read(DS3231_REGISTER_MINUTES_DEFAULT, &minutes);
-						  					ds3231_read(DS3231_REGISTER_HOURS_DEFAULT, &hours);
-
-						  					ds3231_read(DS3231_REGISTER_DAY_OF_WEEK_DEFAULT, &day);
-						  					ds3231_read(DS3231_REGISTER_DATE_DEFAULT, &date_day);
-						  					ds3231_read(DS3231_REGISTER_MONTH_DEFAULT, &mounth);
-						  					ds3231_read(DS3231_REGISTER_YEAR_DEFAULT, &year);
-
-						  					// Convert in string
-						  					// Print minutes on OLED
-						  					if(hours < 10)
-						  					{
-						  						memset(time_buf, 0, sizeof(time_buf));
-						  						sprintf(time_buf, "%c", '0');
-						  						sprintf(time_buf_2, "%d", hours);
-						  						strcat(time_buf, time_buf_2);
-						  						strcat(time, time_buf);
-						  						strcat(time, ":");
-						  					}
-						  					else
-						  					{
-						  						sprintf(time_buf, "%d", hours);
-						  						strcat(time, time_buf);
-						  						strcat(time, ":");
-						  						memset(time_buf, 0, sizeof(time_buf));
-						  					}
-
-						  		//			sprintf(time_buf, "%d", hours);
-						  		//			strcat(time, time_buf);
-						  		//			strcat(time, ":");
-						  		//			memset(time_buf, 0, sizeof(time_buf));
-
-						  					// Print minutes on OLED
-						  					if(minutes < 10)
-						  					{
-						  						memset(time_buf, 0, sizeof(time_buf));
-						  						sprintf(time_buf, "%c", '0');
-						  						sprintf(time_buf_2, "%d", minutes);
-						  						strcat(time_buf, time_buf_2);
-						  						strcat(time, time_buf);
-						  						strcat(time, ":");
-						  					}
-						  					else
-						  					{
-						  						sprintf(time_buf, "%d", minutes);
-						  						strcat(time, time_buf);
-						  						strcat(time, ":");
-						  						memset(time_buf, 0, sizeof(time_buf));
-						  					}
-
-						  					// Print seconds on OLED
-						  					if(seconds == 0)
-						  					{
-						  						clear();
-						  						oled_update();
-						  					}
-						  					if(seconds < 10)
-						  					{
-						  						memset(time_buf, 0, sizeof(time_buf));
-						  						sprintf(time_buf, "%c", '0');
-						  						sprintf(time_buf_2, "%d", seconds);
-						  						strcat(time_buf, time_buf_2);
-						  						strcat(time, time_buf);
-						  					}
-						  					else
-						  					{
-						  						sprintf(time_buf, "%d", seconds);
-						  						strcat(time, time_buf);
-						  						memset(time_buf, 0, sizeof(time_buf));
-						  					}
-
-
-						  					// Print date
-						  					sprintf(time_buf, "%d", date_day);
-						  					strcat(date, time_buf);
-						  					strcat(date, ".");
-						  					memset(time_buf, 0, sizeof(time_buf));
-
-						  					sprintf(time_buf, "%d", mounth);
-						  					strcat(date, time_buf);
-						  					strcat(date, ".");
-						  					memset(time_buf, 0, sizeof(time_buf));
-
-						  					sprintf(time_buf, "%d", year);
-						  					strcat(date, "20");
-						  					strcat(date, time_buf);
-						  					memset(time_buf, 0, sizeof(time_buf));
-
-						  					// day
-						  					switch (day)
-						  					{
-						  						case 1:
-						  							strcat(date, "  Monday");
-						  							break;
-						  						case 2:
-						  							strcat(date, "  Tuesday");
-						  							break;
-						  						case 3:
-						  							strcat(date, "  Wednesday");
-						  							break;
-						  						case 4:
-						  							strcat(date, "  Thursday");
-						  							break;
-						  						case 5:
-						  							strcat(date, "  Friday");
-						  							break;
-						  						case 6:
-						  							strcat(date, "  Saturday");
-						  							break;
-						  						case 7:
-						  							strcat(date, "  Sunday");
-						  							break;
-						  					}
-
-						  					graphics_text(40, 0, 3, time);
-						  					graphics_text(5, 24, 2, date);
-						  					oled_update();
-
-
-						  				osDelay(1000);
-//						  			}
-
-}
-
-
 
 /* USER CODE END PV */
 
@@ -406,8 +216,6 @@ static void MX_TIM7_Init(void);
 void StartDefaultTask(void *argument);
 void Start_Show_Resources(void *argument);
 void Start_UART_Task(void *argument);
-void Start_LCD(void *argument);
-void Start_LCD_touchscreen(void *argument);
 void Start_RTC(void *argument);
 
 /* USER CODE BEGIN PFP */
@@ -511,12 +319,6 @@ int main(void)
 
   /* creation of UART_Task */
   UART_TaskHandle = osThreadNew(Start_UART_Task, NULL, &UART_Task_attributes);
-
-  /* creation of LCD */
-  LCDHandle = osThreadNew(Start_LCD, NULL, &LCD_attributes);
-
-  /* creation of LCD_touchscreen */
-  LCD_touchscreenHandle = osThreadNew(Start_LCD_touchscreen, NULL, &LCD_touchscreen_attributes);
 
   /* creation of RTC */
   RTCHandle = osThreadNew(Start_RTC, NULL, &RTC_attributes);
@@ -1269,100 +1071,6 @@ void Start_UART_Task(void *argument)
   /* USER CODE END Start_UART_Task */
 }
 
-/* USER CODE BEGIN Header_Start_LCD */
-/**
-* @brief Function implementing the LCD thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_Start_LCD */
-void Start_LCD(void *argument)
-{
-  /* USER CODE BEGIN Start_LCD */
-  /* Infinite loop */
-
-	// Init LCD
-	TFT9341_ini(240, 320);
-	TFT9341_SetRotation(3);
-	TFT9341_SetTextColor(TFT9341_WHITE);
-	TFT9341_SetBackColor(TFT9341_BLUE);
-	TFT9341_FillScreen(TFT9341_BLUE);
-
-	// Init names sensors
-	TFT9341_String_DMA(2,30, "TEST ");
-
-	for(;;)
-	{
-
-
-
-
-		osDelay(1000);
-  }
-  /* USER CODE END Start_LCD */
-}
-
-/* USER CODE BEGIN Header_Start_LCD_touchscreen */
-/**
-* @brief Function implementing the LCD_touchscreen thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_Start_LCD_touchscreen */
-void Start_LCD_touchscreen(void *argument)
-{
-  /* USER CODE BEGIN Start_LCD_touchscreen */
-  /* Infinite loop */
-	LCDQUEUE msg;												// Make QUEUE
-	memset(msg.buff, 0, sizeof(msg.buff));						// Fill in buff '\0'
-	char buffer[50] = {0};
-
-	for(;;)
-  	 {
-	  memset(msg.buff, 0, sizeof(msg.buff));						// Fill in buff '\0'
-	  //СЕНСОР ЕКРАНУ
-	  if(TP_Touchpad_Pressed() == TOUCHPAD_PRESSED)
-	  {
-		  strcat(buffer, "PRESED ");
-
-		  uint16_t x_and_y[2] = {0};
-		  uint8_t status_ts = TP_Read_Coordinates(x_and_y);
-		  if(status_ts == TOUCHPAD_DATA_OK)
-		  {
-			  // Convert coordinate from uint16_t format in string format
-			  // And save it in main buffer
-			  char buff_x_coordinates[6] = {0};
-			  char buff_y_coordinates[6] = {0};
-			  char buff_coordinates[15] = {0};
-
-			  strcat(buff_x_coordinates, "x: ");
-			  itoa(x_and_y[0], buff_x_coordinates, 10);
-			  strcat(buff_x_coordinates, " ");
-
-			  strcat(buff_y_coordinates, "y: ");
-			  itoa(x_and_y[1], buff_y_coordinates, 10);
-			  strcat(buff_y_coordinates, " ");
-
-			  strcat(buff_coordinates, buff_x_coordinates);
-			  strcat(buff_coordinates, buff_y_coordinates);
-			  strcat(buffer, buff_coordinates);
-		  }
-	  }
-	  else
-	  {
-		  strcat(buffer, "NO PRESS                  ");
-	  }
-
-	  strcat(msg.buff, buffer);
-	  osMessageQueuePut(LCDQueueHandle, &msg, 0, osWaitForever);  	// Write data on queue (In will print on StartUART_Task task)
-	  memset(buffer, 0, sizeof(buffer));
-
-	  osDelay(200);
-    //osDelay(1);
-  }
-  /* USER CODE END Start_LCD_touchscreen */
-}
-
 /* USER CODE BEGIN Header_Start_RTC */
 /**
 * @brief Function implementing the RTC thread.
@@ -1518,6 +1226,11 @@ void Start_RTC(void *argument)
 							memset(time_buf, 0, sizeof(time_buf));
 						}
 
+						uint8_t second_line = seconds*2;
+						line_h(5, second_line, 19, 2, add);
+//						line_h(uint8_t x0, uint8_t x1, uint8_t y0, uint8_t width, uint8_t mode);
+						//invert_rectangle(5, 15, second_line, 5);
+
 						// Print date
 						sprintf(time_buf, "%d", date_day);
 						strcat(date, time_buf);
@@ -1668,6 +1381,12 @@ void Start_RTC(void *argument)
 				}
 				if(klick == 4)
 				{
+					if((currCounter < 1) || (currCounter > 12))
+					{
+						__HAL_TIM_SET_COUNTER(&htim1, 1);
+						prevCounter = 1;
+					}
+
 					// write data
 					ds3231_set(DS3231_REGISTER_MONTH_DEFAULT, &prevCounter);
 
@@ -1729,6 +1448,12 @@ void Start_RTC(void *argument)
 				}
 				if(klick == 6)
 				{
+					if((currCounter < 1) || (currCounter > 32))
+					{
+						__HAL_TIM_SET_COUNTER(&htim1, 1);
+						prevCounter = 1;
+					}
+
 					// write data
 					ds3231_set(DS3231_REGISTER_DATE_DEFAULT, &prevCounter);
 
@@ -1789,6 +1514,12 @@ void Start_RTC(void *argument)
 				}
 				if(klick == 8)
 				{
+					if((currCounter < 1) || (currCounter > 7))
+					{
+						__HAL_TIM_SET_COUNTER(&htim1, 1);
+						prevCounter = 1;
+					}
+
 					// write data
 					ds3231_set(DS3231_REGISTER_DAY_OF_WEEK_DEFAULT, &prevCounter);
 
