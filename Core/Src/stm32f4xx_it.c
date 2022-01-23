@@ -269,7 +269,7 @@ void TIM7_IRQHandler(void)
 		if(HAL_GPIO_ReadPin(GPIOE, encoder_button_Pin) == 0)	// If button steel pressed
 		{
 			klick++;
-			if(klick >= 8)										// it mean we have only 4 LEDs
+			if(klick >= 15)										// it mean we have only 4 LEDs
 			{
 				klick = 0;
 				HAL_TIM_Base_Stop_IT(&htim7);					// Stop timer (becouse counter can turn on only encoder key)
