@@ -272,12 +272,8 @@ void TIM7_IRQHandler(void)
 			if(klick >= 15)										// it mean we have only 4 LEDs
 			{
 				klick = 0;
-				HAL_TIM_Base_Stop_IT(&htim7);					// Stop timer (becouse counter can turn on only encoder key)
 			}
-			else
-			{
-				HAL_TIM_Base_Stop_IT(&htim7);
-			}
+			HAL_TIM_Base_Stop_IT(&htim7);						// Stop timer (becouse counter can turn on only encoder key)
 		}
 		HAL_TIM_Base_Stop_IT(&htim7);
 	}

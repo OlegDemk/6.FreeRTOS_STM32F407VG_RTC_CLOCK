@@ -1730,7 +1730,7 @@ void Start_RTC(void *argument)
 				if(klick == 6)
 				{
 					// write data
-					ds3231_set(DS3231_REGISTER_MONTH_DEFAULT, &prevCounter);
+					ds3231_set(DS3231_REGISTER_DATE_DEFAULT, &prevCounter);
 
 					graphics_text(0, 16, 1, "                 ");
 					oled_update();
@@ -1790,7 +1790,7 @@ void Start_RTC(void *argument)
 				if(klick == 8)
 				{
 					// write data
-					ds3231_set(DS3231_REGISTER_MONTH_DEFAULT, &prevCounter);
+					ds3231_set(DS3231_REGISTER_DAY_OF_WEEK_DEFAULT, &prevCounter);
 
 					graphics_text(0, 16, 1, "                 ");
 					oled_update();
@@ -1848,7 +1848,7 @@ void Start_RTC(void *argument)
 					if(klick == 10)
 					{
 						// write data
-						ds3231_set(DS3231_REGISTER_MONTH_DEFAULT, &prevCounter);
+						ds3231_set(DS3231_REGISTER_HOURS_DEFAULT, &prevCounter);
 
 						graphics_text(0, 16, 1, "                 ");
 						oled_update();
@@ -1907,7 +1907,7 @@ void Start_RTC(void *argument)
 				if(klick == 12)
 				{
 					// write data
-					ds3231_set(DS3231_REGISTER_MONTH_DEFAULT, &prevCounter);
+					ds3231_set(DS3231_REGISTER_MINUTES_DEFAULT, &prevCounter);
 
 					graphics_text(0, 16, 1, "                 ");
 					oled_update();
@@ -1964,7 +1964,7 @@ void Start_RTC(void *argument)
 				if(klick == 14)
 				{
 					// write data
-					ds3231_set(DS3231_REGISTER_MONTH_DEFAULT, &prevCounter);
+					ds3231_set(DS3231_REGISTER_SECONDS_DEFAULT, &prevCounter);
 
 					graphics_text(0, 16, 1, "                 ");
 					oled_update();
